@@ -16,7 +16,6 @@ function decimalToFractional(dec) {
   const b = dec - 1;
   if (b < 0.01) return "1/100";
 
-  // 1. Check for clean common sportsbook fractions within 0.002 tolerance
   const commonDenominators = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 25, 40, 50, 100];
   for (let den of commonDenominators) {
     let num = Math.round(b * den);
@@ -26,7 +25,6 @@ function decimalToFractional(dec) {
     }
   }
 
-  // 2. Fallback: Exact scaling & GCD reduction for any non-standard decimal
   let num = Math.round(b * 1000);
   let den = 1000;
   let common = gcd(num, den);
@@ -200,16 +198,6 @@ fields.forEach(fieldId => {
   el.addEventListener('input', (e) => {
     processOdds(fieldId, e.target.value);
   });
-});
-
-// Simplify unreduced fractions (like 20/10 -> 2/1) when leaving the fractional input box
-document.getElementById('fractionalOdds').addEventListener('blur', (e) => {
-  const check = validateInput('fractionalOdds', e.target.value);
-  if (check.valid) {
-    const parts = e.target.value.split('/');
-    const baseDec = (parseFloat(parts[0]) / parseFloat(parts[1])) + 1;
-    e.target.value = decimalToFractional(baseDec);
-  }
 });
 
 document.getElementById('stake').addEventListener('input', () => {
