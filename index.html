@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Odds Converter</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="converter-container">
+        <h1>Odds Converter</h1>
+
+        <!-- Global Stake -->
+        <div class="input-group">
+            <label for="stake">Stake ($)</label>
+            <input type="number" id="stake" step="0.01" min="0" value="50.00">
+        </div>
+
+        <hr class="divider">
+
+        <!-- Validation Banner -->
+        <div id="error-banner" class="error-banner hidden"></div>
+
+        <!-- Odds Inputs -->
+        <div class="odds-grid">
+            <div class="input-group">
+                <label for="decimalOdds">Decimal Odds</label>
+                <input type="number" id="decimalOdds" step="0.01" min="1.01" placeholder="e.g. 1.95">
+            </div>
+            <div class="input-group">
+                <label for="fractionalOdds">Fractional Odds</label>
+                <input type="text" id="fractionalOdds" placeholder="e.g. 19/20">
+            </div>
+            <div class="input-group">
+                <label for="americanOdds">American Odds</label>
+                <input type="number" id="americanOdds" placeholder="e.g. -105">
+            </div>
+            <div class="input-group">
+                <label for="hongKongOdds">Hong Kong Odds</label>
+                <input type="number" id="hongKongOdds" step="0.01" min="0.01" placeholder="e.g. 0.95">
+            </div>
+            <div class="input-group">
+                <label for="malaysianOdds">Malaysian Odds</label>
+                <input type="number" id="malaysianOdds" step="0.01" min="-1" max="1" placeholder="e.g. 0.95">
+            </div>
+            <div class="input-group">
+                <label for="indonesianOdds">Indonesian Odds</label>
+                <input type="number" id="indonesianOdds" step="0.01" placeholder="e.g. -1.05">
+            </div>
+        </div>
+
+        <!-- Calculated Metrics Card -->
+        <div class="metrics-card">
+            <div class="metric-row">
+                <span>Profit:</span>
+                <strong id="profit">$0.00</strong>
+            </div>
+            <div class="metric-row">
+                <span>Total Return:</span>
+                <strong id="totalReturn">$0.00</strong>
+            </div>
+            <div class="metric-row">
+                <span>Implied Probability:</span>
+                <strong id="impliedProbability">0.00%</strong>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
