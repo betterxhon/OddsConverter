@@ -8,28 +8,27 @@ let oddsData = [
   { oddType: "indonesianOdds", odd: -1.05, IsInput: false }
 ];
 
+function gcd(a, b) {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
 function decimalToFractional(dec) {
-  const tolerance = 1.0E-6;
-  let h1 = 1, h2 = 0, k1 = 0, k2 = 1;
-  let b = dec - 1; 
-  let x = b;
-  let ai = Math.floor(x);
-  
-  if (Math.abs(b) < 0.01) return "1/100";
+  const b = dec - 1;
+  if (b < 0.01) return "1/100";
 
-  h1 = ai; 
-  k1 = 1;
-
-  while (x - ai > tolerance * k1 * k1) {
-    x = 1 / (x - ai);
-    ai = Math.floor(x);
-    let t1 = h1 * ai + h2;
-    let t2 = k1 * ai + k2;
-    h2 = h1; h1 = t1;
-    k2 = k1; k1 = t2;
-    if (k1 > 100) break;
+  const commonDenominators = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 25, 40, 50, 100];
+  for (let den of commonDenominators) {
+    let num = Math.round(b * den);
+    if (num > 0 && Math.abs(b - (num / den)) < 0.002) {
+      let common = gcd(num, den);
+      return `${num / common}/${den / common}`;
+    }
   }
-  return `${h1}/${k1}`;
+
+  let num = Math.round(b * 1000);
+  let den = 1000;
+  let common = gcd(num, den);
+  return `${num / common}/${den / common}`;
 }
 
 function validateInput(type, rawValue) {
