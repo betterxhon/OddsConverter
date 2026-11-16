@@ -8,6 +8,8 @@ let oddsData = [
   { oddType: "indonesianOdds", odd: -1.05, IsInput: false }
 ];
 
+let activeFieldType = 'decimalOdds';
+
 function gcd(a, b) {
   return b === 0 ? a : gcd(b, a % b);
 }
@@ -16,7 +18,6 @@ function decimalToFractional(dec) {
   const b = dec - 1;
   if (b < 0.01) return "1/100";
 
-  // 1. Check for clean common sportsbook fractions within 0.002 tolerance
   const commonDenominators = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 25, 40, 50, 100];
   for (let den of commonDenominators) {
     let num = Math.round(b * den);
@@ -26,7 +27,6 @@ function decimalToFractional(dec) {
     }
   }
 
-  // 2. Fallback: Exact scaling & GCD reduction for any non-standard decimal
   let num = Math.round(b * 1000);
   let den = 1000;
   let common = gcd(num, den);
@@ -35,7 +35,7 @@ function decimalToFractional(dec) {
 
 function validateInput(type, rawValue) {
   if (rawValue === "" || rawValue === "-" || rawValue === null) {
-    return { valid: false, message: "" };
+    return { valid: false, message: "Please enter a value to calculate." };
   }
 
   if (type === 'fractionalOdds') {
@@ -61,7 +61,7 @@ function validateInput(type, rawValue) {
       if (num <= 1.00) return { valid: false, message: "Decimal odds must be greater than 1.00." };
       break;
     case 'americanOdds':
-      if (num > -100 && num < 100) return { valid: false, message: "American odds must be ≤ -100 or ≥ +100." };
+      if (num > -100 && num < 100) return { valid: false, message: "American odds must be <= -100 or >= +100." };
       break;
     case 'hongKongOdds':
       if (num <= 0) return { valid: false, message: "Hong Kong odds must be greater than 0." };
@@ -73,7 +73,7 @@ function validateInput(type, rawValue) {
       break;
     case 'indonesianOdds':
       if (num > -1 && num < 1) {
-        return { valid: false, message: "Indonesian odds must be ≤ -1.00 or ≥ 1.00." };
+        return { valid: false, message: "Indonesian odds must be <= -1.00 or >= 1.00." };
       }
       break;
   }
@@ -86,7 +86,7 @@ function setErrorState(activeFieldId, message) {
   document.querySelectorAll('input').forEach(el => el.classList.remove('input-error'));
 
   if (message) {
-    document.getElementById(activeFieldId).classList.add('input-error');
+    if (activeFieldId) document.getElementById(activeFieldId).classList.add('input-error');
     banner.innerText = message;
     banner.classList.remove('hidden');
   } else {
@@ -95,7 +95,7 @@ function setErrorState(activeFieldId, message) {
   }
 }
 
-function processOdds(activeType, rawValue) {
+function processCalculation() {
   const stakeEl = document.getElementById('stake');
   const stakeInput = parseFloat(stakeEl.value);
 
@@ -104,9 +104,10 @@ function processOdds(activeType, rawValue) {
     return;
   }
 
-  const check = validateInput(activeType, rawValue);
+  const rawValue = document.getElementById(activeFieldType).value.trim();
+  const check = validateInput(activeFieldType, rawValue);
   if (!check.valid) {
-    setErrorState(activeType, check.message);
+    setErrorState(activeFieldType, check.message);
     return;
   }
 
@@ -117,7 +118,7 @@ function processOdds(activeType, rawValue) {
 
   oddsData.forEach(item => {
     if (item.oddType) {
-      if (item.oddType === activeType) {
+      if (item.oddType === activeFieldType) {
         item.IsInput = true;
         item.odd = rawValue;
       } else {
@@ -128,7 +129,7 @@ function processOdds(activeType, rawValue) {
 
   let baseDecimal;
 
-  switch (activeType) {
+  switch (activeFieldType) {
     case 'decimalOdds':
       baseDecimal = parseFloat(rawValue);
       break;
@@ -181,12 +182,12 @@ function processOdds(activeType, rawValue) {
     }
   });
 
-  if (activeType !== 'decimalOdds') document.getElementById('decimalOdds').value = Number(dec.toFixed(2));
-  if (activeType !== 'fractionalOdds') document.getElementById('fractionalOdds').value = fractionalStr;
-  if (activeType !== 'americanOdds') document.getElementById('americanOdds').value = american;
-  if (activeType !== 'hongKongOdds') document.getElementById('hongKongOdds').value = hongKong;
-  if (activeType !== 'malaysianOdds') document.getElementById('malaysianOdds').value = malaysian;
-  if (activeType !== 'indonesianOdds') document.getElementById('indonesianOdds').value = indonesian;
+  if (activeFieldType !== 'decimalOdds') document.getElementById('decimalOdds').value = Number(dec.toFixed(2));
+  document.getElementById('fractionalOdds').value = fractionalStr;
+  if (activeFieldType !== 'americanOdds') document.getElementById('americanOdds').value = american;
+  if (activeFieldType !== 'hongKongOdds') document.getElementById('hongKongOdds').value = hongKong;
+  if (activeFieldType !== 'malaysianOdds') document.getElementById('malaysianOdds').value = malaysian;
+  if (activeFieldType !== 'indonesianOdds') document.getElementById('indonesianOdds').value = indonesian;
 
   document.getElementById('profit').innerText = `$${profit.toFixed(2)}`;
   document.getElementById('totalReturn').innerText = `$${totalReturn.toFixed(2)}`;
@@ -197,17 +198,23 @@ const fields = ['decimalOdds', 'fractionalOdds', 'americanOdds', 'hongKongOdds',
 
 fields.forEach(fieldId => {
   const el = document.getElementById(fieldId);
-  el.addEventListener('input', (e) => {
-    processOdds(fieldId, e.target.value);
-  });
+  if (el) {
+    el.addEventListener('input', () => {
+      activeFieldType = fieldId;
+    });
+    el.addEventListener('focus', () => {
+      activeFieldType = fieldId;
+    });
+  }
 });
 
-document.getElementById('stake').addEventListener('input', () => {
-  let currentDecimal = document.getElementById('decimalOdds').value || 1.95;
-  processOdds('decimalOdds', currentDecimal);
-});
+const calcBtn = document.getElementById('calculate-btn');
+if (calcBtn) {
+  calcBtn.addEventListener('click', processCalculation);
+}
 
 window.addEventListener('DOMContentLoaded', () => {
+  activeFieldType = 'decimalOdds';
   document.getElementById('decimalOdds').value = 1.95;
-  processOdds('decimalOdds', 1.95);
+  processCalculation();
 });
