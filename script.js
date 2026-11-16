@@ -8,8 +8,6 @@ let oddsData = [
   { oddType: "indonesianOdds", odd: -1.05, IsInput: false }
 ];
 
-let activeFieldType = 'decimalOdds';
-
 function gcd(a, b) {
   return b === 0 ? a : gcd(b, a % b);
 }
@@ -18,6 +16,7 @@ function decimalToFractional(dec) {
   const b = dec - 1;
   if (b < 0.01) return "1/100";
 
+  // 1. Check for clean common sportsbook fractions within 0.002 tolerance
   const commonDenominators = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 25, 40, 50, 100];
   for (let den of commonDenominators) {
     let num = Math.round(b * den);
@@ -27,6 +26,7 @@ function decimalToFractional(dec) {
     }
   }
 
+  // 2. Fallback: Exact scaling & GCD reduction for any non-standard decimal
   let num = Math.round(b * 1000);
   let den = 1000;
   let common = gcd(num, den);
@@ -35,7 +35,7 @@ function decimalToFractional(dec) {
 
 function validateInput(type, rawValue) {
   if (rawValue === "" || rawValue === "-" || rawValue === null) {
-    return { valid: false, message: "Please enter a value to calculate." };
+    return { valid: false, message: "" };
   }
 
   if (type === 'fractionalOdds') {
@@ -86,7 +86,7 @@ function setErrorState(activeFieldId, message) {
   document.querySelectorAll('input').forEach(el => el.classList.remove('input-error'));
 
   if (message) {
-    if (activeFieldId) document.getElementById(activeFieldId).classList.add('input-error');
+    document.getElementById(activeFieldId).classList.add('input-error');
     banner.innerText = message;
     banner.classList.remove('hidden');
   } else {
@@ -95,7 +95,7 @@ function setErrorState(activeFieldId, message) {
   }
 }
 
-function processCalculation() {
+function processOdds(activeType, rawValue) {
   const stakeEl = document.getElementById('stake');
   const stakeInput = parseFloat(stakeEl.value);
 
@@ -104,10 +104,9 @@ function processCalculation() {
     return;
   }
 
-  const rawValue = document.getElementById(activeFieldType).value.trim();
-  const check = validateInput(activeFieldType, rawValue);
+  const check = validateInput(activeType, rawValue);
   if (!check.valid) {
-    setErrorState(activeFieldType, check.message);
+    setErrorState(activeType, check.message);
     return;
   }
 
@@ -118,7 +117,7 @@ function processCalculation() {
 
   oddsData.forEach(item => {
     if (item.oddType) {
-      if (item.oddType === activeFieldType) {
+      if (item.oddType === activeType) {
         item.IsInput = true;
         item.odd = rawValue;
       } else {
@@ -129,7 +128,7 @@ function processCalculation() {
 
   let baseDecimal;
 
-  switch (activeFieldType) {
+  switch (activeType) {
     case 'decimalOdds':
       baseDecimal = parseFloat(rawValue);
       break;
@@ -182,12 +181,12 @@ function processCalculation() {
     }
   });
 
-  if (activeFieldType !== 'decimalOdds') document.getElementById('decimalOdds').value = Number(dec.toFixed(2));
-  document.getElementById('fractionalOdds').value = fractionalStr;
-  if (activeFieldType !== 'americanOdds') document.getElementById('americanOdds').value = american;
-  if (activeFieldType !== 'hongKongOdds') document.getElementById('hongKongOdds').value = hongKong;
-  if (activeFieldType !== 'malaysianOdds') document.getElementById('malaysianOdds').value = malaysian;
-  if (activeFieldType !== 'indonesianOdds') document.getElementById('indonesianOdds').value = indonesian;
+  if (activeType !== 'decimalOdds') document.getElementById('decimalOdds').value = Number(dec.toFixed(2));
+  if (activeType !== 'fractionalOdds') document.getElementById('fractionalOdds').value = fractionalStr;
+  if (activeType !== 'americanOdds') document.getElementById('americanOdds').value = american;
+  if (activeType !== 'hongKongOdds') document.getElementById('hongKongOdds').value = hongKong;
+  if (activeType !== 'malaysianOdds') document.getElementById('malaysianOdds').value = malaysian;
+  if (activeType !== 'indonesianOdds') document.getElementById('indonesianOdds').value = indonesian;
 
   document.getElementById('profit').innerText = `$${profit.toFixed(2)}`;
   document.getElementById('totalReturn').innerText = `$${totalReturn.toFixed(2)}`;
@@ -198,23 +197,27 @@ const fields = ['decimalOdds', 'fractionalOdds', 'americanOdds', 'hongKongOdds',
 
 fields.forEach(fieldId => {
   const el = document.getElementById(fieldId);
-  if (el) {
-    el.addEventListener('input', () => {
-      activeFieldType = fieldId;
-    });
-    el.addEventListener('focus', () => {
-      activeFieldType = fieldId;
-    });
+  el.addEventListener('input', (e) => {
+    processOdds(fieldId, e.target.value);
+  });
+});
+
+// Simplify unreduced fractions (like 20/10 -> 2/1) when leaving the fractional input box
+document.getElementById('fractionalOdds').addEventListener('blur', (e) => {
+  const check = validateInput('fractionalOdds', e.target.value);
+  if (check.valid) {
+    const parts = e.target.value.split('/');
+    const baseDec = (parseFloat(parts[0]) / parseFloat(parts[1])) + 1;
+    e.target.value = decimalToFractional(baseDec);
   }
 });
 
-const calcBtn = document.getElementById('calculate-btn');
-if (calcBtn) {
-  calcBtn.addEventListener('click', processCalculation);
-}
+document.getElementById('stake').addEventListener('input', () => {
+  let currentDecimal = document.getElementById('decimalOdds').value || 1.95;
+  processOdds('decimalOdds', currentDecimal);
+});
 
 window.addEventListener('DOMContentLoaded', () => {
-  activeFieldType = 'decimalOdds';
   document.getElementById('decimalOdds').value = 1.95;
-  processCalculation();
+  processOdds('decimalOdds', 1.95);
 });
